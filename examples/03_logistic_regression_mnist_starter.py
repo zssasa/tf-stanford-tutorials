@@ -1,12 +1,15 @@
-"""
-Starter code for logistic regression model to solve OCR task 
+""" Starter code for logistic regression model to solve OCR task 
 with MNIST in TensorFlow
 MNIST dataset: yann.lecun.com/exdb/mnist/
-
+Author: Chip Huyen
+Prepared for the class CS 20SI: "TensorFlow for Deep Learning Research"
+cs20si.stanford.edu
 """
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 import time
 
@@ -23,6 +26,7 @@ mnist = input_data.read_data_sets('/data/mnist', one_hot=True)
 # each image in the MNIST data is of shape 28*28 = 784
 # therefore, each image is represented with a 1x784 tensor
 # there are 10 classes for each image, corresponding to digits 0 - 9. 
+# Features are of the type float, and labels are of the type int
 
 
 # Step 3: create weights and bias
@@ -62,21 +66,23 @@ with tf.Session() as sess:
 			# 
 			# 
 			total_loss += loss_batch
-		print 'Average loss epoch {0}: {1}'.format(i, total_loss/n_batches)
+		print('Average loss epoch {0}: {1}'.format(i, total_loss/n_batches))
 
-	print 'Total time: {0} seconds'.format(time.time() - start_time)
+	print('Total time: {0} seconds'.format(time.time() - start_time))
 
 	print('Optimization Finished!') # should be around 0.35 after 25 epochs
 
 	# test the model
+	preds = tf.nn.softmax(logits)
+	correct_preds = tf.equal(tf.argmax(preds, 1), tf.argmax(Y, 1))
+	accuracy = tf.reduce_sum(tf.cast(correct_preds, tf.float32)) # need numpy.count_nonzero(boolarr) :(
+	
 	n_batches = int(mnist.test.num_examples/batch_size)
 	total_correct_preds = 0
+	
 	for i in range(n_batches):
 		X_batch, Y_batch = mnist.test.next_batch(batch_size)
-		_, loss_batch, logits_batch = sess.run([optimizer, loss, logits], feed_dict={X: X_batch, Y:Y_batch}) 
-		preds = tf.nn.softmax(logits_batch)
-		correct_preds = tf.equal(tf.argmax(preds, 1), tf.argmax(Y_batch, 1))
-		accuracy = tf.reduce_sum(tf.cast(correct_preds, tf.float32)) # need numpy.count_nonzero(boolarr) :(
-		total_correct_preds += sess.run(accuracy)	
+		accuracy_batch = sess.run([accuracy], feed_dict={X: X_batch, Y:Y_batch}) 
+		total_correct_preds += accuracy_batch	
 	
-	print 'Accuracy {0}'.format(total_correct_preds/mnist.test.num_examples)
+	print('Accuracy {0}'.format(total_correct_preds/mnist.test.num_examples))
